@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": "p_1",
+    "title": "Laptop",
+    "price": 2500.0,
+    "category": "Electronics",
+    "stock": 5,
+    "availableForClient": true
+  },
+  {
+    "id": "p_2",
+    "title": "T-Shirt",
+    "price": 20.0,
+    "category": "Clothing",
+    "stock": 30,
+    "availableForClient": true
+  },
+  {
+    "id": "p_3",
+    "title": "Hidden Item",
+    "price": 999.9,
+    "category": "Secret",
+    "stock": 1,
+    "availableForClient": false
+  },
+  {
+    "id": "p_9f2be072-95ab-4cde-a9b1-b4a3f4e50672",
+    "title": "Mouse",
+    "price": 15.0,
+    "category": "Electronics",
+    "stock": 50,
+    "availableForClient": true
+  }
+]
