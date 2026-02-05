@@ -4,6 +4,9 @@ import domain.User;
 import persistence.JsonDB;
 import persistence.JsonUserRepository;
 import persistence.UserRepository;
+import persistence.JsonProductRepository;
+import persistence.ProductRepository;
+import service.CatalogService;
 import service.AuthService;
 import util.PasswordUtil;
 
@@ -11,9 +14,21 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-
-        String usersPath = "data/users.json";
         JsonDB db = new JsonDB();
+
+        // product tests:
+        String productsPath = "data/products.json";
+        ProductRepository productRepo = new JsonProductRepository(productsPath, db);
+        CatalogService catalog = new CatalogService(productRepo);
+
+        System.out.println("All products: " + catalog.listAll().size());
+        System.out.println("Customer products: " + catalog.listForCustomer());
+
+        catalog.addProduct("Mouse", 15.0, "Electronics", 50, true);
+        System.out.println("After add: " + catalog.listAll().size());
+
+        // auth tests:
+        String usersPath = "data/users.json";
         UserRepository userRepo = new JsonUserRepository(usersPath, db);
         AuthService auth = new AuthService(userRepo);
 
