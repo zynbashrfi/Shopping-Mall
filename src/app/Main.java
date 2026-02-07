@@ -6,8 +6,11 @@ import persistence.JsonUserRepository;
 import persistence.UserRepository;
 import persistence.JsonProductRepository;
 import persistence.ProductRepository;
+import persistence.CartRepository;
+import persistence.JsonCartRepository;
 import service.CatalogService;
 import service.AuthService;
+import service.CartService;
 import util.PasswordUtil;
 
 import java.util.List;
@@ -24,7 +27,6 @@ public class Main {
         System.out.println("All products: " + catalog.listAll().size());
         System.out.println("Customer products: " + catalog.listForCustomer());
 
-        catalog.addProduct("Mouse", 15.0, "Electronics", 50, true);
         System.out.println("After add: " + catalog.listAll().size());
 
         // auth tests:
@@ -61,5 +63,25 @@ public class Main {
         System.out.println(auth.login(uname, "1234").getRole());
 
         System.out.println("Done.");
+
+        // cart tests:
+        String cartPath = "data/carts.json";
+
+        CartRepository cartRepo = new JsonCartRepository(cartPath, db);
+        CartService cartService = new CartService(cartRepo, productRepo);
+
+        User test = auth.login("testuser", "1234");
+
+        System.out.println("Cart total initially: " + cartService.total(test.getId()));
+        String firstProductId = catalog.listForCustomer().get(0).getId();
+        cartService.addToCart(test.getId(), firstProductId, 2);
+        System.out.println("Cart total after add: " + cartService.total(test.getId()));
+        System.out.println("Cart after add: " + cartService.getOrCreateCart(test.getId()));
+
+        cartService.updateQty(test.getId(), firstProductId, 1);
+        System.out.println("Cart after update: " + cartService.getOrCreateCart(test.getId()));
+
+        cartService.removeFromCart(test.getId(), firstProductId);
+        System.out.println("Cart after remove: " + cartService.getOrCreateCart(test.getId()));
     }
 }
