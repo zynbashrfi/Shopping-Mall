@@ -11,6 +11,7 @@ import persistence.JsonCartRepository;
 import service.CatalogService;
 import service.AuthService;
 import service.CartService;
+import service.CheckoutService;
 import util.PasswordUtil;
 
 import java.util.List;
@@ -83,5 +84,24 @@ public class Main {
 
         cartService.removeFromCart(test.getId(), firstProductId);
         System.out.println("Cart after remove: " + cartService.getOrCreateCart(test.getId()));
+
+        // checkout tests:
+        CheckoutService checkoutService = new CheckoutService(cartRepo, productRepo);
+        String pid = catalog.listForCustomer().get(0).getId();
+        cartService.addToCart(test.getId(), pid, 2);
+        System.out.println("Before checkout cart: " + cartService.getOrCreateCart(test.getId()));
+        System.out.println("Stock before: " + productRepo.findById(pid).get().getStock());
+
+        checkoutService.checkout(test.getId());
+
+        System.out.println("After checkout cart: " + cartService.getOrCreateCart(test.getId()));
+        System.out.println("Stock after: " + productRepo.findById(pid).get().getStock());
+
+        try {
+            cartService.addToCart(test.getId(), pid, 9999);
+            checkoutService.checkout(test.getId());
+        } catch (Exception e) {
+            System.out.println("Expected checkout error: " + e.getMessage());
+        }
     }
 }
