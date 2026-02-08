@@ -20,7 +20,7 @@ public class Product {
     }
 
     public String getId() { return id; }
-    public String getTitle() { return id; }
+    public String getTitle() { return title; }
     public double getPrice() { return price; }
     public String getCategory() { return category; }
     public int getStock() { return stock; }
