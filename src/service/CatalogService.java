@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class CatalogService {
     private final ProductRepository products;
@@ -19,6 +20,10 @@ public class CatalogService {
 
     public List<Product> listAll() {
         return products.findAll();
+    }
+
+    public Optional<Product> findById(String id) {
+        return products.findById(id);
     }
 
     public List<Product> listForCustomer() {
@@ -67,6 +72,16 @@ public class CatalogService {
 
         products.saveAll(all);
 
+    }
+
+    public void updateProduct(String id, String title, double price, String category, int stock, boolean availableForClient) {
+        Product p = findById(id).orElseThrow(() -> new IllegalArgumentException("Product not found"));
+        p.setTitle(title);
+        p.setPrice(price);
+        p.setCategory(category);
+        p.setStock(stock);
+        p.setAvailableForClient(availableForClient);
+        updateProduct(p);
     }
 
     public void deleteProduct(String productId) {
