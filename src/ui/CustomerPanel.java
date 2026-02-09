@@ -20,10 +20,11 @@ public class CustomerPanel extends JPanel {
 
   private final DefaultTableModel productsModel;
   private final JTable productsTable;
+
   private final DefaultTableModel cartModel;
   private final JTable cartTable;
-  private final JLabel totalLabel;
 
+  private final JLabel totalLabel;
 
   private final JTextField searchField = new JTextField(16);
   private final JComboBox<String> categoryBox = new JComboBox<>();
@@ -36,9 +37,9 @@ public class CustomerPanel extends JPanel {
     this.app = app;
 
     setLayout(new BorderLayout());
-    setBorder(new EmptyBorder(10,10,10,10));
+    setBorder(new EmptyBorder(10, 10, 10, 10));
 
-    // product:
+    // Products:
     productsModel = new DefaultTableModel(
         new Object[]{"ID", "Title", "Category", "Price", "Stock"}, 0
     ) {
@@ -48,33 +49,34 @@ public class CustomerPanel extends JPanel {
     productsTable = new JTable(productsModel);
     productsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-    JPanel productsPanel = new JPanel(new BorderLayout(8,8));
+    JPanel productsPanel = new JPanel(new BorderLayout(8, 8));
     productsPanel.setBorder(BorderFactory.createTitledBorder("Products"));
-
     productsPanel.add(buildProductsControls(), BorderLayout.NORTH);
     productsPanel.add(new JScrollPane(productsTable), BorderLayout.CENTER);
     productsPanel.add(buildProductsButtons(), BorderLayout.SOUTH);
 
-    // cart:
+    // Carts:
     cartModel = new DefaultTableModel(
         new Object[]{"ProductId", "Qty", "UnitPrice", "LineTotal"}, 0
     ) {
       @Override public boolean isCellEditable(int row, int column) { return false; }
     };
+
     cartTable = new JTable(cartModel);
     cartTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-    JPanel cartPanel = new JPanel(new BorderLayout(8,8));
+    JPanel cartPanel = new JPanel(new BorderLayout(8, 8));
     cartPanel.setBorder(BorderFactory.createTitledBorder("Cart"));
     cartPanel.add(new JScrollPane(cartTable), BorderLayout.CENTER);
     cartPanel.add(buildCartButtons(), BorderLayout.SOUTH);
 
-    // split:
+    // Split:
     JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, productsPanel, cartPanel);
+    split.setDividerLocation(580);
     split.setResizeWeight(0.6);
     add(split, BorderLayout.CENTER);
 
-    // footer:
+    // Footer:
     JPanel footer = new JPanel(new BorderLayout());
     JButton logout = new JButton("Logout");
     logout.addActionListener(e -> {
@@ -93,6 +95,9 @@ public class CustomerPanel extends JPanel {
     refreshCategoryBox();
     refreshProductsTable();
     refreshCartTableAndTotal();
+    revalidate();
+    repaint();
+
   }
 
   private JPanel buildProductsControls() {
@@ -120,6 +125,8 @@ public class CustomerPanel extends JPanel {
       sortBox.setSelectedIndex(0);
       refreshProductsTable();
     });
+    p.setPreferredSize(new Dimension(10, 55));
+    p.setMinimumSize(new Dimension(10, 55));
 
     return p;
   }
@@ -133,6 +140,7 @@ public class CustomerPanel extends JPanel {
     addToCart.addActionListener(e -> {
       try {
         User u = ctx.session.requireUser();
+
         int row = productsTable.getSelectedRow();
         if (row < 0) throw new IllegalArgumentException("Select a product first");
 
@@ -140,7 +148,13 @@ public class CustomerPanel extends JPanel {
 
         String qtyStr = JOptionPane.showInputDialog(this, "Quantity:", "1");
         if (qtyStr == null) return; // cancelled
-        int qty = Integer.parseInt(qtyStr.trim());
+
+        int qty;
+        try {
+          qty = Integer.parseInt(qtyStr.trim());
+        } catch (Exception ex) {
+          throw new IllegalArgumentException("Quantity must be a number");
+        }
 
         ctx.cart.addToCart(u.getId(), productId, qty);
         refreshCartTableAndTotal();
@@ -166,6 +180,7 @@ public class CustomerPanel extends JPanel {
     updateQty.addActionListener(e -> {
       try {
         User u = ctx.session.requireUser();
+
         int row = cartTable.getSelectedRow();
         if (row < 0) throw new IllegalArgumentException("Select an item first");
 
@@ -173,7 +188,13 @@ public class CustomerPanel extends JPanel {
 
         String qtyStr = JOptionPane.showInputDialog(this, "New quantity (0 removes):", "1");
         if (qtyStr == null) return;
-        int qty = Integer.parseInt(qtyStr.trim());
+
+        int qty;
+        try {
+          qty = Integer.parseInt(qtyStr.trim());
+        } catch (Exception ex) {
+          throw new IllegalArgumentException("Quantity must be a number");
+        }
 
         ctx.cart.updateQty(u.getId(), productId, qty);
         refreshCartTableAndTotal();
@@ -185,11 +206,13 @@ public class CustomerPanel extends JPanel {
     remove.addActionListener(e -> {
       try {
         User u = ctx.session.requireUser();
+
         int row = cartTable.getSelectedRow();
         if (row < 0) throw new IllegalArgumentException("Select an item first");
 
         String productId = (String) cartModel.getValueAt(row, 0);
         ctx.cart.removeFromCart(u.getId(), productId);
+
         refreshCartTableAndTotal();
       } catch (Exception ex) {
         UtilDialogs.error(this, ex.getMessage());
@@ -199,9 +222,11 @@ public class CustomerPanel extends JPanel {
     checkout.addActionListener(e -> {
       try {
         User u = ctx.session.requireUser();
+
         ctx.checkout.checkout(u.getId());
         UtilDialogs.info(this, "Purchase completed!");
-        refreshProductsTable();
+
+        refreshProductsTable();       // stock changed
         refreshCartTableAndTotal();
       } catch (Exception ex) {
         UtilDialogs.error(this, ex.getMessage());
@@ -215,33 +240,37 @@ public class CustomerPanel extends JPanel {
     categoryBox.removeAllItems();
     categoryBox.addItem("ALL");
 
-
     List<Product> list = ctx.catalog.listForCustomer();
     for (Product p : list) {
       String cat = p.getCategory() == null ? "" : p.getCategory().trim();
+      if (cat.isEmpty()) continue;
+
       boolean exists = false;
       for (int i = 0; i < categoryBox.getItemCount(); i++) {
-        if (categoryBox.getItemAt(i).equalsIgnoreCase(cat)) { exists = true; break; }
+        if (categoryBox.getItemAt(i).equalsIgnoreCase(cat)) {
+          exists = true;
+          break;
+        }
       }
-      if (!cat.isEmpty() && !exists) categoryBox.addItem(cat);
+      if (!exists) categoryBox.addItem(cat);
     }
+
+    if (categoryBox.getItemCount() > 0) categoryBox.setSelectedIndex(0);
   }
 
   private void refreshProductsTable() {
     productsModel.setRowCount(0);
 
     String q = searchField.getText();
-    String cat = (String) categoryBox.getSelectedItem();
-    String sort = (String) sortBox.getSelectedItem();
 
+    String cat = (categoryBox.getSelectedItem() == null)
+        ? "ALL"
+        : categoryBox.getSelectedItem().toString();
+
+    String sort = (String) sortBox.getSelectedItem();
     SortMode sortMode = SortMode.valueOf(sort);
 
-    List<Product> list = ctx.catalog.searchSortFilter(
-        q,
-        cat,
-        sortMode,
-        true // onlyAvailableForClient
-    );
+    List<Product> list = ctx.catalog.searchSortFilter(q, cat, sortMode, true);
 
     for (Product p : list) {
       productsModel.addRow(new Object[]{
@@ -256,6 +285,7 @@ public class CustomerPanel extends JPanel {
 
   private void refreshCartTableAndTotal() {
     cartModel.setRowCount(0);
+
     User u = ctx.session.getCurrent();
     if (u == null) {
       totalLabel.setText("Total: 0.0");
