@@ -87,43 +87,59 @@ public class CatalogService {
         if (onlyAvailableForClient)
             list = list.stream().filter(Product::isAvailableForClient).collect(Collectors.toList());
 
-        if (queryText != null && !queryText.trim().isEmpty()) {
+        if (queryText != null) {
             String q = queryText.trim().toLowerCase(Locale.ROOT);
-            list = list.stream()
-                    .filter(p -> p.getTitle().toLowerCase(Locale.ROOT).contains(q))
-                    .collect(Collectors.toList());
+            if (!q.isEmpty()) {
+                list = list.stream()
+                        .filter(p -> p.getTitle() != null &&
+                                p.getTitle().toLowerCase(java.util.Locale.ROOT).contains(q))
+                        .collect(java.util.stream.Collectors.toList());
+            }
         }
 
-        if (categoryOrNull != null && !categoryOrNull.trim().isEmpty() && !"ALL".equalsIgnoreCase(categoryOrNull)) {
-            String cat = categoryOrNull.trim().toLowerCase(Locale.ROOT);
-            list = list.stream()
-                    .filter(p -> p.getCategory() != null && p.getCategory().toLowerCase(Locale.ROOT).equals(cat))
-                    .collect(Collectors.toList());
+        if (categoryOrNull != null ) {
+            String cat = categoryOrNull.trim();
+            if (!cat.isEmpty() && !"ALL".equalsIgnoreCase(cat)) {
+                String catLower = cat.toLowerCase(java.util.Locale.ROOT);
+                list = list.stream()
+                        .filter(p -> p.getCategory() != null &&
+                                p.getCategory().trim().toLowerCase(java.util.Locale.ROOT).equals(catLower))
+                        .collect(java.util.stream.Collectors.toList());
+            }
         }
 
-        Comparator<Product> comp = null;
+        java.util.Comparator<Product> comp = null;
         if (sortMode != null) {
             switch (sortMode) {
 
                 case TITLE_ASC:
-                    comp = Comparator.comparing(Product::getTitle, String.CASE_INSENSITIVE_ORDER);
+                    comp = java.util.Comparator.comparing(
+                            (Product p) -> p.getTitle() == null ? "" : p.getTitle(),
+                            String.CASE_INSENSITIVE_ORDER
+                    );
                     break;
 
-                case  TITLE_DESC:
-                    comp = Comparator.comparing(Product::getTitle, String.CASE_INSENSITIVE_ORDER).reversed();
+                case TITLE_DESC:
+                    comp = java.util.Comparator.comparing(
+                            (Product p) -> p.getTitle() == null ? "" : p.getTitle(),
+                            String.CASE_INSENSITIVE_ORDER
+                    ).reversed();
                     break;
 
                 case PRICE_ASC:
-                    comp = Comparator.comparing(Product::getPrice);
+                    comp = java.util.Comparator.comparingDouble(Product::getPrice);
                     break;
 
                 case PRICE_DESC:
-                    comp = Comparator.comparing(Product::getPrice).reversed();
-                    break;
+                    comp = java.util.Comparator.comparingDouble(Product::getPrice).reversed();
             }
         }
 
-        if (comp != null) list = list.stream().sorted(comp).collect(Collectors.toList());
+        if (comp != null) {
+            list = list.stream()
+                    .sorted(comp)
+                    .collect(java.util.stream.Collectors.toList());
+        }
         return list;
     }
 }
